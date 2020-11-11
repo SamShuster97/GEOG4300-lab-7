@@ -1,0 +1,88 @@
+---
+title: 'Geog6300: Lab 7'
+output: github_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Regression
+
+**Value:** 30 points
+
+```{r setup, message=FALSE, warning=FALSE}
+library(sf)
+library(tidyverse)
+```
+
+**Overview:**
+This lab focuses on regression techniques. You'll be analyzing the association of county demographics on the presidential vote in 2012 (the Obama-Romney election).
+
+###Part 1: Importing data and descriptive statistics###
+This lab uses the same county data file you used in Lab 6. You also have a county shapefile that we'll use for mapping these results.
+
+**Question 1 (2 points)** _Load the two files listed above--the election data and county level shapefile. Filter the election data for just the 2012 election, then join it to the county shapefile._
+
+```{r}
+#Code goes here.
+```
+
+For this analysis, you'll be looking at the following variables:
+
+*gop_pct: The % of vote for Romney (the Republican) in 2012
+*medinc: Median household income
+*wht_pop_pct: % of population classified as white
+*ed_graddeg_pct: % of the population whose highest educational attainment is a graduate degree.
+
+You'll be evaluating how each of the last three variables was associated with the county's Republican vote in 2012. To start with, you should assess the distribution of each variable
+
+**Question 2 (3 points + XC)** _Create a qqplot for each of the four variables of interest. For 1 point extra credit, use the stat_qq and stat_qq_line functions in ggplot to do so. See the documentation for details. Based on these graphs, assess the normality of these variables._
+
+```{r}
+#Code goes here.
+```
+
+{Your assessment of the variables' normality goes here.}
+
+**Question 3 (2 points)** _Use tmap to map the four variables of interest using Jenks natural breaks as the classification method._
+
+**Question 4 (3 points)** _Based on the map from question 3, summarise two major patterns you see in the spatial distribution of these data. Be sure to make specific references to your data to illustrate your points._
+
+**Question 5 (3 points)** _Create univariate regression models for each of the independent variables (income, % white, and % w/graduate degree. Make sure the results of each model are visible._
+
+```{r}
+#Code goes here.
+```
+
+**Question 6 (3 points)** _Summarize the results of the model in question 5, focusing on the direction and significance of the model coefficients, the model residuals, and the overall R2 value._
+
+**Question 7 (2 points)** _Create a multivariate regression model with all three variables of interest and call the results._
+
+```{r}
+#Code goes here
+```
+
+**Question 8 (4 points)** _Summarise the results of the multivariate model. What are the direction, magnitude, and significance of each coefficient, and how did it change from the univariate models (if at all)? What do the R2 and F-statistic values tell you about overall model fit?_
+
+{Response goes here}
+
+**Question 9 (3 points)** _Use a qq plot and a map to assess the normality of residuals and their spatial distribution. Summarise any notable patterns that you see._
+
+```{r}
+#Code goes here
+```
+
+{Summary goes here}
+
+**Question 10 (3 points)** _Assess any issues with multicollinearity or heteroskedastity in this model using the techniques shown in class. Run the appropriate tests and explain what their results show you._
+
+```{r}
+#Code goes here
+```
+
+{Interpretation goes here}
+
+**Question 11 (2 points)** _Overall, explain what this model tells you about the relationship of these variables. How would you summarize the model results to a friend?_
