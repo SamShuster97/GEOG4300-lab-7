@@ -16,6 +16,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r setup, message=FALSE, warning=FALSE}
 library(sf)
 library(tidyverse)
+library(ggpubr)
+library(tmap)
+library(Hmisc)
+#install.packages("lmtest")
+library(stargazer)
+library(lmtest)
+#install.packages("car")
+library(car)
+#library(raster)
 ```
 
 **Overview:**
@@ -27,7 +36,12 @@ This lab uses the same county data file you used in Lab 6. You also have a count
 **Question 1 (2 points)** _Load the two files listed above--the election data and county level shapefile. Filter the election data for just the 2012 election, then join it to the county shapefile._
 
 ```{r}
-#Code goes here.
+election_data = read.csv("data/elections0816_demog_pct.csv") %>%
+  filter(year == "2012")
+counties_shp = st_read("data/US_counties_albersusa.shp")
+
+election_sf = counties_shp %>%
+  inner_join(election_data)
 ```
 
 For this analysis, you'll be looking at the following variables:
@@ -42,47 +56,118 @@ You'll be evaluating how each of the last three variables was associated with th
 **Question 2 (3 points + XC)** _Create a qqplot for each of the four variables of interest. For 1 point extra credit, use the stat_qq and stat_qq_line functions in ggplot to do so. See the documentation for details. Based on these graphs, assess the normality of these variables._
 
 ```{r}
-#Code goes here.
+ggqqplot(election_data$gop_pct, title = "GOP Percentage", color = "red4", xlab = "Theoretical", ylab = "Sample")
+hist(election_data$gop_pct)
+ggqqplot(election_data$medinc, title = "Median Household Income", color = "darkgreen", xlab = "Theoretical", ylab = "Sample")
+hist(election_data$medinc)
+ggqqplot(election_data$wht_pop_pct, title = "Percentage of Population Classified as White", color = "lightsalmon3", xlab = "Theoretical", ylab = "Sample")
+hist(election_data$wht_pop_pct)
+ggqqplot(election_data$ed_graddeg_pct, title = "Percentage of Population with Graduate Degrees", color = "purple4", xlab = "Theoretical", ylab = "Sample")
+hist(election_data$ed_graddeg_pct)
+
+#df <- data.frame(y = rt(200, df = 5))
+#p <- ggplot(df, aes(sample = y))
+#p + stat_qq() + stat_qq_line()
+ggplot(election_data, aes(sample = election_data$gop_pct)) + stat_qq(color="firebrick2", alpha=1) + geom_abline(intercept = mean(election_data$gop_pct), slope = sd(election_data$gop_pct))
+ggplot(election_data, aes(sample = election_data$medinc)) + stat_qq(color="darkgreen", alpha=1) + geom_abline(intercept = mean(election_data$medinc), slope = sd(election_data$medinc))
+ggplot(election_data, aes(sample = election_data$wht_pop_pct)) + stat_qq(color="lightsalmon3", alpha=1) + geom_abline(intercept = mean(election_data$wht_pop_pct), slope = sd(election_data$wht_pop_pct))
+ggplot(election_data, aes(sample = election_data$ed_graddeg_pct)) + stat_qq(color="purple4", alpha=1) + geom_abline(intercept = mean(election_data$ed_graddeg_pct), slope = sd(election_data$ed_graddeg_pct))
 ```
 
-{Your assessment of the variables' normality goes here.}
+There is a slight negative skew to the percentage of the GOP. The Household income variable has a strong positive skew. The variable pertaining to the percentage of white population has a strong negative skew and the Grad degrees strong positive skew.
 
 **Question 3 (2 points)** _Use tmap to map the four variables of interest using Jenks natural breaks as the classification method._
 
+```{r}
+tmap_mode("plot")
+#fisher classification method used in place of jenks per the recommendation of R
+tm_shape(election_sf)+tm_polygons("gop_pct", style = "fisher")
+#tm_shape(election_sf)+tm_polygons("gop_pct", style = "jenks")
+tm_shape(election_sf)+tm_polygons("medinc", style = "fisher")
+tm_shape(election_sf)+tm_polygons("wht_pop_pct", style = "fisher")
+tm_shape(election_sf)+tm_polygons("ed_graddeg_pct", style = "fisher")
+```
+
 **Question 4 (3 points)** _Based on the map from question 3, summarise two major patterns you see in the spatial distribution of these data. Be sure to make specific references to your data to illustrate your points._
+
+Those in the midwest and mountainous regions of the country tend to vote conservatively. There is a high percentage of conservative voters in the Southern region as well, especially around Northern Alabama and Georgia leading up into Tennessee and Kentucky. The regions with the highest population percentage of those classified as white tend to fall North of the Mason-Dixon line. The proportion of people classified as white is high in the Southern region, excluding the deep-south states like Georgia, Alabama, Mississippi, etc. tends to be quite high as well. The states in the deep south tend to have larger black populations especially along the region formerly known as the cotton belt. The South has a large black population and the South-West has a large hispanic population, which would lend to why each respective region has lower proportions of people classified as white.
 
 **Question 5 (3 points)** _Create univariate regression models for each of the independent variables (income, % white, and % w/graduate degree. Make sure the results of each model are visible._
 
 ```{r}
-#Code goes here.
+model_medinc = lm(gop_pct~medinc, data = election_data)
+summary(model_medinc)
+plot(model_medinc)
+
+model_wht = lm(gop_pct~wht_pop_pct, data = election_data)
+summary(model_wht)
+plot(model_wht)
+
+model_graddeg = lm(gop_pct~ed_graddeg_pct, data = election_data)
+summary(model_graddeg)
+plot(model_graddeg)
 ```
 
 **Question 6 (3 points)** _Summarize the results of the model in question 5, focusing on the direction and significance of the model coefficients, the model residuals, and the overall R2 value._
 
+Medinc: Based on the R-squared value found from the test between the medinc and gop_pct variables, there does not seem to be a strong relationship between income and conservative voters. However, the large negative coefficient indicates that as median income increases, the percentage of GOP voters decreases. Despite the large margin of error, the p-value indicates that the coefficient is in fact significant. The residuals are linear in nature and have a relatively large range. There is a high level of variation based upon the 
+
+White Pop: There is a large degree of variation between the residuals which indicates a certain level unpredictability. That said, the R-squared value is 0.18 which indicates at least a weak relationship between race and political leaning as far as those classified as white are concerned. The coefficient is quite small but despite that, the relationship between being white and voting republican is quite high.
+
+Education: Based on the R-squared value alone, there appears to be at least some relationship between education level and the tendency to vote republican. The negative coefficient indicates an inverse relationship between voting sentiment and education level - favoring the tendency for highly educated people to vote conservatively. Based on the residuals range, there does not appear to be a huge amount of variation in this finding.
+
 **Question 7 (2 points)** _Create a multivariate regression model with all three variables of interest and call the results._
 
 ```{r}
-#Code goes here
+model_multivar = lm(gop_pct~medinc + wht_pop_pct + ed_graddeg_pct, data = election_data)
+summary(model_multivar)
+
 ```
 
 **Question 8 (4 points)** _Summarise the results of the multivariate model. What are the direction, magnitude, and significance of each coefficient, and how did it change from the univariate models (if at all)? What do the R2 and F-statistic values tell you about overall model fit?_
 
-{Response goes here}
+The R-squared value is rather high which indicates a high level of correlation between the variables assessed and voter sentiment. Those who are white and make a large income tend to vote conservatively. Highly educated people tend to lean towards the liberal end of the spectrum. The level of variation in findings is quite low for each variable based on the F-statistic and the product of it and the std error of each variable. This indicates a good model fit.
 
 **Question 9 (3 points)** _Use a qq plot and a map to assess the normality of residuals and their spatial distribution. Summarise any notable patterns that you see._
 
 ```{r}
-#Code goes here
+mv_residuals = residuals(model_multivar)
+summary(mv_residuals)
+ggqqplot(mv_residuals, title = "Multivariate Regression Model", xlab = "Theoretical", ylab = "Sample")
 ```
 
-{Summary goes here}
+The distribution appears to be quite normal. There doesn't appear to be a high degree of variation. Data points appear to be distributed relatively evenly across space.
 
 **Question 10 (3 points)** _Assess any issues with multicollinearity or heteroskedastity in this model using the techniques shown in class. Run the appropriate tests and explain what their results show you._
 
 ```{r}
-#Code goes here
+vif(model_multivar)#below 4 or 5 is good
+
+model_outlier = election_sf%>%
+  select(gop_pct, wht_pop_pct, medinc, ed_graddeg_pct)%>%
+  st_set_geometry(NULL)
+
+rcorr(as.matrix(model_outlier))
+
+bptest(model_multivar)
+
+cooks_dist = cooks.distance(model_multivar)
+plot(cooks_dist, pch="*", cex=2, main = "Influential Obs by Cooks distance")
+abline(h=12*mean(cooks_dist, na.rm = T), col = "red")
+abline(h=4*mean(cooks_dist, na.rm = T), col = "orange")
+
+cooks_dist = cooks.distance(model_multivar)
+plot(cooks_dist, pch="*", cex=2, main = "Influential Obs by Cooks distance")
+abline(h=12*mean(cooks_dist, na.rm = T), col = "red")
+abline(h=4*mean(cooks_dist, na.rm = T), col = "orange")
+
+text(x=1:length(cooks_dist+1), y=cooks_dist, labels =ifelse(cooks_dist>4*mean(cooks_dist, na.rm = T), names(cooks_dist),""), col = "orange")
+text(x=1:length(cooks_dist+1), y=cooks_dist, labels = ifelse(cooks_dist>12*mean(cooks_dist, na.rm = T), names(cooks_dist),""), col = "red")
+
 ```
 
-{Interpretation goes here}
+The vif test returned values less than 4 which indicates a low level of multicollinerarity. There is an inverse relationship between income and the percentage of GOP voters. The same is true for those with high levels of educational attainment. There is a positive correlation between being white and voting republican. There appears to be a statistically significant correlation between all variables. The p value returned by the BP test was significant which indicates the model is indeed heteroskedastic.
 
 **Question 11 (2 points)** _Overall, explain what this model tells you about the relationship of these variables. How would you summarize the model results to a friend?_
+
+The most influential factors determined by the models created indicates a strong relationship between race and conservative political values. Those who have attained a high level of education tend to be more liberal in their political leanings. The probability of voting republican is quite high for those classified as white. Education level appears to play an influential role as well. Median Income somewhat surprisingly does not influence voter temperament particularly significantly, although it does play a part. The region in which a person lives tends to be a more influential factor income is.
